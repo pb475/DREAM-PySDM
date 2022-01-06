@@ -21,7 +21,11 @@ function [output] = drops_py(input)
         PySDM_backends = py.importlib.import_module('PySDM.backends');
         si = PySDM_physics.constants.si;
     end
-    formulae = PySDM.Formulae();
+    formulae = PySDM.Formulae(pyargs( ...
+        py.dict(pyargs( ...
+            'sgm_w', 0.072 * si.joule / si.metre^2 ...
+        )) ...
+    ));
                    
     n_tot = strsplit(input.n_tot);
     meanr = strsplit(input.meanr);
@@ -40,8 +44,8 @@ function [output] = drops_py(input)
         )), ...        
     }));
     pv0 = input.RH * formulae.saturation_vapour_pressure.pvs_Celsius(input.T - PySDM_physics.constants.T0);
-    q0 = PySDM_physics.constants.eps * pv0 / (input.p - pv0);
-    R = (1 + q0) * (PySDM_physics.constants.Rv / (1 / q0 + 1) + PySDM_physics.constants.Rd / (1 + q0));
+    q0 = PySDM_physics.constants_defaults.eps * pv0 / (input.p - pv0);
+    R = (1 + q0) * (PySDM_physics.constants_defaults.Rv / (1 / q0 + 1) + PySDM_physics.constants_defaults.Rd / (1 + q0));
     rho0 = input.p / input.T / R;
     mass_of_air = 1000 * si.kg;
     environment = PySDM_environments.Parcel(pyargs( ...
