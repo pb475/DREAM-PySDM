@@ -58,3 +58,7 @@ output = drops_py(input);
 % Define the return vector for comparison with the measurements
 N_Parcel = [output.N_act, output.S_max]; 
 N_Parcel = N_Parcel(:);
+
+Pars
+input
+output
