@@ -20,12 +20,6 @@ Pars(1,8) = 1.4000 %GSD mode 2
 
 Pars(1,4) = 0.9000 %Soluble volume fraction (soluble component = (nh4)hso4, insoluble = BC)
 
-
-%Write the parameters to the par.in file
-%[dummy] = WriteParFile_Parcel(Pars,Extra);
-
-format='%10.4e'
-  
 %Compute effective kappa
 density_sol   = 1770;       %Kg/m3 (nh4)2so4
 density_insol = 2000;       %Kg/m3 BC
@@ -40,24 +34,24 @@ ns_sol = (ionic_dissociation_sol * 1 / (molar_mass_sol/density_sol));
 ns = ns_sol;
 kappa_sol = ns * Mv_water / rho_water;
 kappa = kappa_sol * volfrac_sol;
-  
+
 % Write the parameters to a structure (all in SI units)
 dt = .25;                      %Timestep
 input = struct(...
     'n_bins', 250, ...           %Number of bins
     'T',  Pars(1,9), ...         %Initial Temperature (K)
-    'RH', .999, ...              %Initial Relative Humidity (%)
+    'RH', .999, ...              %Initial Relative Humidity (1)
     'p',  1.00e+05, ...          %Initial Pressure (Pa)
     'w',  Pars(1,5), ...         %Updraft velocity (m/s)
     'kappa', kappa, ... 
-    'n_tot', [num2str(Pars(1,1),format),        ' ', num2str(Pars(1,6),format)       ], ...  %N mode 1,2
-    'meanr', [num2str(Pars(1,2) * 1e-6,format), ' ', num2str(Pars(1,7) * 1e-6,format)], ...  %Mean radius mode 1,2
-    'gstdv', [num2str(Pars(1,3),format),        ' ', num2str(Pars(1,8),format)       ], ...  %GSD mode 1,2
+    'n_tot', [Pars(1,1), Pars(1,6)], ...  %N mode 1,2
+    'meanr', [Pars(1,2) * 1e-6, Pars(1,7) * 1e-6], ...  %Mean radius mode 1,2
+    'gstdv', [Pars(1,3), Pars(1,8)], ...  %GSD mode 1,2
     'dt', dt, ... 
-    'nt', ceil(1000 / Pars(1,5) / dt) ... % TODO: stop at S_max !                            %Output height. Needs changing so stop at S_max. 
-);  
+    'nt', ceil(1000 / Pars(1,5) / dt), ... % max output height (but actually stops at S_max)
+    'sigma', 0.072 ... % surface tension coefficient for water
+);
 
-    
 % Run the forward model 
 output = drops_py(input);
    
