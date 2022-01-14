@@ -45,7 +45,6 @@ Pars(1,13) = 99.9; % Initial parcel RH (%)
 
 %------------------------------------------------------------------------
 
-assert(Pars(1,8)==1)  % MAC setting not implemented yet
 input = struct(...
     'n_bins', 250, ...           %Number of bins
     'T',  Pars(1,11), ...        %Initial Temperature (K)
@@ -58,7 +57,8 @@ input = struct(...
     'gstdv', {{[Pars(1,3), Pars(1,6)]}}, ...  %GSD mode 1,2
     'dt', dt, ... 
     'nt', ceil(1000 / Pars(1,10) / dt), ... % max output height (but actually stops at S_max)
-    'sigma', Pars(1,9) / 1000 ... % surface tension coefficient for water [J/m2]
+    'sigma', Pars(1,9) / 1000, ... % surface tension coefficient for water [J/m2]
+    'MAC', Pars(1,8) ...
 )
 output = drops_py(input)
    
@@ -111,7 +111,6 @@ Pars(1,22) = 99.;    % Initial parcel RH (%)
 
 %------------------------------------------------------------------------
 
-assert(Pars(1,17)==1)  % MAC setting not implemented yet
 input = struct(...
     'n_bins', 250, ...           %Number of bins
     'T',  Pars(1,20), ...        %Initial Temperature (K)
@@ -144,7 +143,8 @@ input = struct(...
     }}, ...  %GSD
     'dt', dt, ... 
     'nt', ceil(1000 / Pars(1,19) / dt), ... % max output height (but actually stops at S_max)
-    'sigma', Pars(1,18) / 1000 ... % surface tension coefficient for water [J/m2]
+    'sigma', Pars(1,18) / 1000, ... % surface tension coefficient for water [J/m2]
+    'MAC', Pars(1,17) ...
 )
 output = drops_py(input)
 
