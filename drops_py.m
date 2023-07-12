@@ -134,7 +134,7 @@ function [output] = drops_py(input)
     S_max = -1;
     for i = 1:input.nt
         try
-            particulator.run(int32(1));
+            particulator.run(int32(i));
         catch e
             e.message
             output = struct('N_act', nan, 'S_max', nan);
