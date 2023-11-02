@@ -23,7 +23,7 @@ function [output] = drops_py(input)
     end
     formulae = PySDM.Formulae(pyargs( ...
         'constants', py.dict(pyargs( ...
-            'sgm_w', input.sigma * si.joule / si.metre^2, ...  
+            'sgm_w', input.sigma * si.joule / si.metre^2, ...
             'MAC', input.MAC ...
         )) ...
     ));
@@ -41,7 +41,7 @@ function [output] = drops_py(input)
         counts(k) = floor(input.n_bins / length(counts));
     end
 
-    if length(counts) > 1    
+    if length(counts) > 1
         offsets = circshift(cumsum(counts), 1);
         counts(length(counts)) = counts(length(counts)) + input.n_bins - offsets(1);
         offsets(1) = 0;
@@ -53,7 +53,7 @@ function [output] = drops_py(input)
         n_tot = input.n_tot{k};
         meanr = input.meanr{k};
         gstdv = input.gstdv{k};
-        
+
         assert(length(n_tot) == length(meanr))
         assert(length(gstdv) == length(meanr))
         if length(n_tot) == 1
@@ -73,7 +73,7 @@ function [output] = drops_py(input)
                     'norm_factor', n_tot(2), ...
                     'm_mode', meanr(2), ...
                     's_geom', gstdv(2) ...
-                )), ...        
+                )), ...
             }));
         else
             assert(false)
@@ -81,8 +81,8 @@ function [output] = drops_py(input)
         tmp = PySDM_spectral_sampling.ConstantMultiplicity(pyargs(...
             'spectrum', spectrum...
         )).sample(pyargs('n_sd', counts(k)));
-        r_dry(offsets(k)+1 : offsets(k) + counts(k)) = double(py.numpy.ascontiguousarray(tmp{1}));
-        n_vol(offsets(k)+1 : offsets(k) + counts(k)) = double(tmp{2});
+        r_dry(offsets(k)+1 : offsets(k) + counts(k)) = double(py.array.array('d', py.numpy.ascontiguousarray(tmp{1})) );
+        n_vol(offsets(k)+1 : offsets(k) + counts(k)) = double(py.array.array('d', tmp{2}) );
         kappa(offsets(k)+1 : offsets(k) + counts(k)) = input.kappa{k};
     end
     r_dry = py.numpy.array(r_dry);
@@ -98,7 +98,7 @@ function [output] = drops_py(input)
         'dt', input.dt * si.s, ...
         'mass_of_dry_air', mass_of_air, ...
         'p0', input.p, ...
-        'q0', q0, ...
+        'initial_water_vapour_mixing_ratio', q0, ...
         'T0', input.T * si.K, ...
         'w', input.w * si.m / si.s ...
     ));
@@ -112,7 +112,14 @@ function [output] = drops_py(input)
     builder.add_dynamic(PySDM_dynamics.Condensation())
 
     v_dry = formulae.trivia.volume(r_dry);
-    r_wet = PySDM_initialisation.equilibrate_wet_radii(r_dry, environment, kappa * v_dry);
+
+    % r_wet = PySDM_initialisation.equilibrate_wet_radii(r_dry, environment, kappa * v_dry); % OLD VERSION: matlab 2021a does not like this
+    r_wet = PySDM_initialisation.equilibrate_wet_radii(pyargs(... %NEW VERSION: matlab 20201a likes this
+            'r_dry', r_dry, ...
+            'environment', environment, ...
+            'kappa_times_dry_volume', kappa * v_dry...
+            ));
+
     attributes = py.dict(pyargs( ...
         'dry volume', formulae.trivia.volume(r_dry), ...
         'n', PySDM_initialisation.discretise_multiplicities(n_vol / rho0 * environment.mass_of_dry_air), ...
@@ -134,7 +141,8 @@ function [output] = drops_py(input)
     S_max = -1;
     for i = 1:input.nt
         try
-            particulator.run(int32(i));
+            particulator.run(int32(1))
+
         catch e
             e.message
             output = struct('N_act', nan, 'S_max', nan);
@@ -147,16 +155,21 @@ function [output] = drops_py(input)
             S_max = S_max_curr;
         end
     end
-    
+
     get = py.getattr(P{'activable fraction'}.get(pyargs('S_max', S_max)), '__getitem__');
     N1 = get(int32(0));
-    
+
     output = struct(...
         'N_act', ...
         N1 * spectrum.norm_factor, ...
         'S_max', ...
-        1 + S_max / 100 ...
-    );
+        S_max ...
+            );
+    % 1 + S_max / 100 ... %: this is smax ratio, not smax
+
+    % disp('drops completed successfully!')
+
+    return
 end
 
 function [value] = get_value(products, name)
